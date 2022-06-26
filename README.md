@@ -11,6 +11,7 @@ A tool to run object files, mainly beacon object files (BOF), in .Net.
     One of these is required:
         -f Path to an object file to load
         -a Base64 encoded object file
+        -u URL to an object file to load
 
     Optional arguments:
 

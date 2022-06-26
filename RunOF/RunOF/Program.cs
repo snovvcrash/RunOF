@@ -5,11 +5,11 @@ using System.Diagnostics;
 
 namespace RunOF
 {
-    class Program
+    public class Program
     {
         private const int ERROR_INVALID_COMMAND_LINE = 0x667;
 
-        static int Main(string[] args)
+        public static int Main(string[] args)
         {
 
 #if _X86

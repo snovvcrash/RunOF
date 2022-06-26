@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RunOF.Internals
 {
-
     class ParsedArgs
     {
         internal string filename;
@@ -20,15 +19,14 @@ namespace RunOF.Internals
 
         public ParsedArgs(string[] args)
         {
-
             // Set our log level
-            if (args.Contains("-v"))
+            if (args.Contains("-v=1"))
             {
                 Logger.Level = Logger.LogLevels.DEBUG;
                 this.debug = true;
             }
 
-            if (args.Contains("-h"))
+            if (args.Contains("-h=1"))
             {
                 PrintUsage();
                 throw new ArgumentNullException();
@@ -37,13 +35,13 @@ namespace RunOF.Internals
             Logger.Debug($"Parsing {args.Length} Arguments: {string.Join(" ", args)}");
             of_args = new List<OfArg>();
             // Mandatory arguments are either file (-f) or base 64 encoded bytes(-b)
-            if (!args.Contains("-f") && !args.Contains("-a"))
+            if (!args.Contains("-f") && !args.Contains("-a") && !args.Contains("-u"))
             {
                 PrintUsage();
                 throw new ArgumentException("Invalid Command Line");
             }
 
-            if (args.Contains("-f"))
+            if (args.Contains("-f="))
             {
                 try
                 {
@@ -73,9 +71,22 @@ namespace RunOF.Internals
                     PrintUsage();
                     throw new ArgumentException($"Unable to extract binary object file from arguments (use -a <b64_blog> \n {e}");
                 }
-
+            } else if (args.Contains("-u"))
+            {
+                try
+                {
+                    WebClient wc = new WebClient();
+                    ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls | (SecurityProtocolType)768 | (SecurityProtocolType)3072;
+                    MemoryStream ms = new MemoryStream(wc.DownloadData(ExtractArg(args, "-u")));
+                    BinaryReader br = new BinaryReader(ms);
+                    file_bytes = br.ReadBytes(Convert.ToInt32(ms.Length));
+                }
+                catch (Exception e)
+                {
+                    PrintUsage();
+                    throw new ArgumentException($"Unable to download binary object file from arguments (use -u <bof_url> \n {e}");
+                }
             }
-
 
             // Set our thread timeout (seconds).
             // This can be a number, or -1
@@ -172,13 +183,8 @@ namespace RunOF.Internals
                     {
                         Logger.Error($"Unable to parse OF argument -Z as a string: {e}");
                     }
-
                 }
-
-
             }
-
-
         }
 
         public byte[] SerialiseArgs()
@@ -235,6 +241,7 @@ Usage:
     One of these is required:
         -f Path to an object file to load
         -a Base64 encoded object file
+        -u URL to an object file to load
 
     Optional arguments:
 
@@ -249,17 +256,12 @@ Usage:
         -Z:hello     A string that's converted to wchar (e.g. (wchar_t)hello passed to object file)
         -b:aGVsbG8=  A base64 encoded binary blob (decoded binary passed to object file)
 
-        To specify an empty string just leave it blank (e.g. -Z: )
-
-      ");
-            
-
+        To specify an empty string just leave it blank (e.g. -Z: )");
         }
     }
 
     class OfArg
     {
-
         public enum ArgType: UInt32
         {
             BINARY,
@@ -291,8 +293,6 @@ Usage:
             arg_type = ArgType.BINARY;
             this.arg_data = Encoding.ASCII.GetBytes(arg_data+"\0");
         }
-
-
 
         public OfArg(byte[] arg_data)
         { 
