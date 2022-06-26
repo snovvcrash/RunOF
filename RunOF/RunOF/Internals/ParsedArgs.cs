@@ -20,13 +20,13 @@ namespace RunOF.Internals
         public ParsedArgs(string[] args)
         {
             // Set our log level
-            if (args.Contains("-v=1"))
+            if (args.Contains("-v"))
             {
                 Logger.Level = Logger.LogLevels.DEBUG;
                 this.debug = true;
             }
 
-            if (args.Contains("-h=1"))
+            if (args.Contains("-h"))
             {
                 PrintUsage();
                 throw new ArgumentNullException();
@@ -41,7 +41,7 @@ namespace RunOF.Internals
                 throw new ArgumentException("Invalid Command Line");
             }
 
-            if (args.Contains("-f="))
+            if (args.Contains("-f"))
             {
                 try
                 {
